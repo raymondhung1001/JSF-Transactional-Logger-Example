@@ -114,6 +114,10 @@
                 <configuration>
                     <source>11</source>
                     <target>11</target>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                    <useIncrementalCompilation>true</useIncrementalCompilation>
                 </configuration>
             </plugin>
 
@@ -123,6 +127,12 @@
                 <version>3.3.2</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <warSourceDirectory>src/main/webapp</warSourceDirectory>
+                    <webResources>
+                        <resource>
+                            <directory>src/main/webapp</directory>
+                        </resource>
+                    </webResources>
                 </configuration>
             </plugin>
 
@@ -135,7 +145,39 @@
                     <tomeeVersion>${tomee.version}</tomeeVersion>
                     <tomeeClassifier>plus</tomeeClassifier>
                     <context>jsf-todo-app</context>
-                    <httpPort>8080</httpPort>
+                    <!-- Enable hot reload for Java classes and resources -->
+                    <reloadOnUpdate>true</reloadOnUpdate>
+                    <!-- Point to compiled classes directory for hot reload -->
+                    <webappClasses>${project.build.outputDirectory}</webappClasses>
+                    <!-- Synchronize webapp resources for hot reload -->
+                    <synchronization>
+                        <from>${project.basedir}/src/main/webapp</from>
+                        <to>${project.build.directory}/apache-tomee/webapps/${project.build.finalName}</to>
+                    </synchronization>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Resources Plugin - for hot reload of resources -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Clean Plugin - ensure clean builds when needed -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.3.2</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.build.directory}/classes</directory>
+                        </fileset>
+                    </filesets>
                 </configuration>
             </plugin>
         </plugins>

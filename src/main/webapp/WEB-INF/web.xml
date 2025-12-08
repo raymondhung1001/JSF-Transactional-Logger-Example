@@ -11,6 +11,18 @@
         <param-value>Development</param-value>
     </context-param>
 
+    <!-- Enable JSF resource reloading in development -->
+    <context-param>
+        <param-name>javax.faces.RESOURCE_EXCLUDES</param-name>
+        <param-value></param-value>
+    </context-param>
+
+    <!-- Enable JSF partial state saving for better performance -->
+    <context-param>
+        <param-name>javax.faces.PARTIAL_STATE_SAVING</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
     <context-param>
         <param-name>javax.faces.FACELETS_SKIP_COMMENTS</param-name>
         <param-value>true</param-value>

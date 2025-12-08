@@ -61,6 +61,104 @@ This will:
 3. Deploy the application
 4. Make it available at `http://localhost:8080/jsf-todo-app`
 
+### Hot Reload Support
+
+The application is configured with **hot reload** capabilities for faster development:
+
+#### Automatic Hot Reload
+
+When running with `mvn tomee:run`, the application supports hot reload with the following behavior:
+
+- **Java classes** (`.java` files): 
+  - When you save a Java file, your IDE compiles it to `target/classes`
+  - Run `mvn compile` or let your IDE auto-compile
+  - TomEE will detect the updated WAR file and reload the application
+  - **Note**: Full application reload may take a few seconds
+- **XHTML pages**: Automatically reloaded when the WAR is updated
+- **Resources** (CSS, JS, images): Automatically reloaded via resource synchronization
+- **Configuration files**: Reloaded when the application is redeployed
+
+The TomEE plugin uses `reloadOnUpdate=true` to automatically reload the application when changes are detected in the compiled classes or webapp resources.
+
+#### Manual Reload
+
+If automatic reload doesn't work, you can manually trigger a reload:
+1. Save your changes
+2. The server will detect changes and reload automatically
+3. Refresh your browser
+
+#### IDE Integration
+
+For best hot reload experience with your IDE:
+
+**IntelliJ IDEA:**
+1. Run `mvn tomee:run` from the terminal or configure a Maven run configuration
+2. Enable "Build project automatically" in Settings → Build, Execution, Deployment → Compiler
+3. Make changes to Java files and save - they will auto-compile to `target/classes`
+4. Run `mvn package` or wait for TomEE to detect changes (may require manual rebuild)
+5. TomEE will reload the application when the WAR is updated
+6. **Tip**: For faster iteration, use "Update classes and resources" (Ctrl+F9) then run `mvn package`
+
+**Eclipse:**
+1. Run `mvn tomee:run` from the terminal
+2. Enable "Build Automatically" in Project menu
+3. Changes to Java files will be automatically compiled to `target/classes`
+4. Run `mvn package` to rebuild the WAR, or TomEE may auto-detect changes
+5. TomEE will reload the application when changes are detected
+6. **Tip**: Right-click project → Maven → Update Project if classes aren't being detected
+
+**VS Code:**
+1. Run `mvn tomee:run` from the integrated terminal
+2. Install the Java Extension Pack for automatic compilation
+3. Changes to Java files will be automatically compiled
+4. Run `mvn package` to rebuild the WAR for TomEE to pick up changes
+5. **Tip**: Use "Java: Clean Java Language Server Workspace" if compilation isn't working
+
+#### What Gets Hot Reloaded
+
+✅ **Automatically reloaded:**
+- **Java classes** (`.java` files) - Compiled automatically and reloaded by TomEE
+  - Managed beans (JSF/CDI beans)
+  - Services (EJBs)
+  - Models (JPA entities)
+  - Filters and listeners
+  - All classes in `src/main/java`
+- XHTML pages (`.xhtml` files)
+- JavaScript files (`.js` files)
+- CSS files
+- Images and static resources
+- Configuration files (with some limitations)
+
+⚠️ **May require server restart:**
+- Changes to `persistence.xml` or database schema
+- Changes to `shiro.ini` security configuration
+- Major changes to `web.xml` (some changes may require restart)
+- Adding/removing dependencies (requires rebuild and restart)
+- Changes to class structure that affect JPA entity mappings (may need restart)
+
+#### Troubleshooting Hot Reload
+
+If hot reload isn't working for Java files:
+1. **Ensure automatic compilation is enabled** in your IDE
+2. **Check that classes are being compiled** - verify `target/classes` contains updated `.class` files
+3. **Rebuild the WAR file** - run `mvn package` to update the WAR with new classes
+4. **Verify TomEE is running** - ensure you're running with `mvn tomee:run` (not a standalone server)
+5. **Check compilation errors** - fix any compilation errors that prevent classes from being built
+6. **Check console output** - look for reload messages in the TomEE console
+7. **Manual reload** - if needed, stop and restart: `Ctrl+C` then `mvn tomee:run` again
+
+**Common Java Hot Reload Issues:**
+- **Classes not updating**: Run `mvn clean package` to ensure a fresh build and WAR update
+- **IDE not compiling**: Check IDE build settings and ensure output directory is `target/classes`
+- **TomEE not detecting changes**: The WAR file must be rebuilt - run `mvn package` after making changes
+- **Application not reloading**: Check TomEE logs for reload messages; may need manual restart
+- **ClassLoader issues**: Some complex changes (like adding new methods to interfaces) may require a full restart
+
+**For Faster Development:**
+- Use your IDE's built-in application server integration if available (IntelliJ Ultimate, Eclipse with server plugins)
+- Consider using DCEVM (Dynamic Code Evolution VM) or HotswapAgent for true hot reload without restart
+- For quick iterations, keep a terminal open and run `mvn package` after each change
+
 ### Alternative: Manual Deployment
 
 1. Build the WAR file:
