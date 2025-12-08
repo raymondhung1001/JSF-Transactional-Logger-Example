@@ -20,7 +20,12 @@ public class TodoService {
 
     public Todo createTodo(String title, String description, User user) {
         logger.info("Creating new todo for user: {}", user.getUsername());
-        Todo todo = new Todo(title, description, user);
+        // Ensure the User entity is managed in this persistence context
+        User managedUser = em.find(User.class, user.getId());
+        if (managedUser == null) {
+            managedUser = em.merge(user);
+        }
+        Todo todo = new Todo(title, description, managedUser);
         em.persist(todo);
         em.flush(); // Flush to ensure the entity is immediately available for queries
         logger.info("Todo created successfully with id: {}", todo.getId());
@@ -31,7 +36,9 @@ public class TodoService {
         logger.debug("Finding todos for user id: {}", userId);
         TypedQuery<Todo> query = em.createNamedQuery("Todo.findByUser", Todo.class);
         query.setParameter("userId", userId);
-        return query.getResultList();
+        List<Todo> result = query.getResultList();
+        logger.debug("Found {} todos for user id: {}", result.size(), userId);
+        return result;
     }
 
     public Todo findById(Long id) {

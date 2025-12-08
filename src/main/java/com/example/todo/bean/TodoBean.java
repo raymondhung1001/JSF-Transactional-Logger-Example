@@ -46,8 +46,18 @@ public class TodoBean implements Serializable {
     public void loadTodos() {
         if (loginBean.isLoggedIn()) {
             currentUserId = loginBean.getCurrentUser().getId();
-            todos = todoService.findByUser(currentUserId);
-            logger.debug("Loaded {} todos for user id: {}", todos.size(), currentUserId);
+            // Create a new list instance to ensure JSF detects the change
+            List<Todo> newTodos = todoService.findByUser(currentUserId);
+            todos = newTodos != null ? new java.util.ArrayList<>(newTodos) : new java.util.ArrayList<>();
+            logger.info("Loaded {} todos for user id: {}", todos.size(), currentUserId);
+            if (!todos.isEmpty()) {
+                for (Todo todo : todos) {
+                    logger.debug("Todo in list: id={}, title={}", todo.getId(), todo.getTitle());
+                }
+            }
+        } else {
+            todos = new java.util.ArrayList<>();
+            logger.warn("Cannot load todos - user not logged in");
         }
     }
 
@@ -55,9 +65,17 @@ public class TodoBean implements Serializable {
         if (loginBean.isLoggedIn()) {
             try {
                 User user = loginBean.getCurrentUser();
+                logger.info("Adding todo with title: '{}' for user: {}", title, user.getUsername());
                 Todo todo = todoService.createTodo(title, description, user);
-                logger.info("Todo added: {}", todo.getTitle());
+                logger.info("Todo added successfully: id={}, title={}", todo.getId(), todo.getTitle());
+                
+                // Force refresh the list by setting it to null first
+                todos = null;
+                // Then reload
                 loadTodos();
+                
+                logger.info("After loadTodos(), list size is: {}", todos != null ? todos.size() : 0);
+                
                 title = "";
                 description = "";
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -67,6 +85,8 @@ public class TodoBean implements Serializable {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Failed to add todo"));
             }
+        } else {
+            logger.warn("Cannot add todo - user not logged in");
         }
     }
 
@@ -131,6 +151,12 @@ public class TodoBean implements Serializable {
 
     // Getters and Setters
     public List<Todo> getTodos() {
+        // Ensure list is loaded if it's null or empty and user is logged in
+        if (todos == null && loginBean != null && loginBean.isLoggedIn()) {
+            logger.debug("Todos list is null, loading todos...");
+            loadTodos();
+        }
+        logger.debug("getTodos() called, returning {} todos", todos != null ? todos.size() : 0);
         return todos;
     }
 
