@@ -17,6 +17,8 @@
             <property name="eclipselink.ddl-generation" value="none"/>
             <property name="eclipselink.logging.level" value="INFO"/>
             <property name="eclipselink.logging.parameters" value="true"/>
+            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+            <property name="eclipselink.sequencing.native" value="true"/>
         </properties>
     </persistence-unit>
 </persistence>

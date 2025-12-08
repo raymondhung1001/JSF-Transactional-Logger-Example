@@ -149,11 +149,6 @@
                     <reloadOnUpdate>true</reloadOnUpdate>
                     <!-- Point to compiled classes directory for hot reload -->
                     <webappClasses>${project.build.outputDirectory}</webappClasses>
-                    <!-- Synchronize webapp resources for hot reload -->
-                    <synchronization>
-                        <from>${project.basedir}/src/main/webapp</from>
-                        <to>${project.build.directory}/apache-tomee/webapps/${project.build.finalName}</to>
-                    </synchronization>
                 </configuration>
             </plugin>
 

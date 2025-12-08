@@ -10,5 +10,10 @@
             <var>msg</var>
         </resource-bundle>
     </application>
+    <lifecycle>
+        <phase-listener>com.example.todo.listener.phase.PageRequestPhaseListener</phase-listener>
+        <phase-listener>com.example.todo.listener.phase.UserInteractionPhaseListener</phase-listener>
+        <phase-listener>com.example.todo.listener.phase.PageResponsePhaseListener</phase-listener>
+    </lifecycle>
 </faces-config>
 
