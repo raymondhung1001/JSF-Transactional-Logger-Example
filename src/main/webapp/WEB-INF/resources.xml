@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <Resource id="todoDS" type="DataSource">
+        JdbcDriver org.h2.Driver
+        JdbcUrl jdbc:h2:mem:todoDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;DATABASE_TO_UPPER=false;INIT=RUNSCRIPT FROM 'classpath:META-INF/init.sql'
+        UserName sa
+        Password
+        JtaManaged true
+    </Resource>
+</resources>
+

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    <h:head>
+        <title>My Todos</title>
+        <h:outputStylesheet library="webjars" name="bootstrap/4.6.2/css/bootstrap.min.css"/>
+        <h:outputScript name="js/session-timeout.js" target="head"/>
+        <style>
+            body {
+                background-color: #f5f5f5;
+            }
+            .navbar {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .navbar-brand, .navbar-text {
+                color: white !important;
+            }
+            .todo-card {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                margin-bottom: 1rem;
+                padding: 1.5rem;
+                transition: transform 0.2s;
+            }
+            .todo-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+            .todo-completed {
+                opacity: 0.6;
+                text-decoration: line-through;
+            }
+            .add-todo-section {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                padding: 2rem;
+                margin-bottom: 2rem;
+            }
+        </style>
+    </h:head>
+    <h:body>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">
+                    <i class="pi pi-check-square"></i> Todo App
+                </a>
+                <div class="navbar-nav ml-auto">
+                    <span class="navbar-text mr-3">
+                        Welcome, #{loginBean.currentUser.fullName} (#{loginBean.currentUser.username})
+                    </span>
+                    <h:form>
+                        <p:commandButton id="logoutBtn" value="Logout" 
+                                       action="#{loginBean.logout}" 
+                                       styleClass="btn btn-outline-light"
+                                       icon="pi pi-sign-out"
+                                       ajax="false"/>
+                    </h:form>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="container mt-4">
+            <p:messages id="messages" showDetail="true" closable="true"/>
+            
+            <!-- Add Todo Section -->
+            <div class="add-todo-section">
+                <h3 class="mb-3">
+                    <i class="pi pi-plus-circle"></i> Add New Todo
+                </h3>
+                <h:form id="addTodoForm">
+                    <div class="form-group">
+                        <h:outputLabel for="title" value="Title" styleClass="form-label"/>
+                        <p:inputText id="title" value="#{todoBean.title}" 
+                                   styleClass="form-control" 
+                                   placeholder="Enter todo title"
+                                   required="true"
+                                   requiredMessage="Title is required"/>
+                    </div>
+                    <div class="form-group">
+                        <h:outputLabel for="description" value="Description" styleClass="form-label"/>
+                        <p:inputTextarea id="description" value="#{todoBean.description}" 
+                                       styleClass="form-control" 
+                                       placeholder="Enter todo description"
+                                       rows="3"/>
+                    </div>
+                    <p:commandButton value="Add Todo" 
+                                   action="#{todoBean.addTodo}" 
+                                   styleClass="btn btn-primary"
+                                   icon="pi pi-plus"
+                                   update="messages, :todoList"/>
+                </h:form>
+            </div>
+            
+            <!-- Todo List -->
+            <h:panelGroup id="todoList">
+                <h3 class="mb-3">
+                    <i class="pi pi-list"></i> My Todos (#{todoBean.todos.size()})
+                </h3>
+                
+                <h:form id="todoForm">
+                    <ui:fragment rendered="#{empty todoBean.todos}">
+                        <div class="alert alert-info">
+                            <i class="pi pi-info-circle"></i> No todos yet. Add one above to get started!
+                        </div>
+                    </ui:fragment>
+                    
+                    <ui:fragment rendered="#{not empty todoBean.todos}">
+                        <ui:repeat value="#{todoBean.todos}" var="todo">
+                            <div class="todo-card #{todo.completed ? 'todo-completed' : ''}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-2">
+                                            <i class="pi pi-circle" style="color: #{todo.completed ? 'green' : 'gray'}"></i>
+                                            #{todo.title}
+                                        </h5>
+                                        <p class="text-muted mb-2">#{todo.description}</p>
+                                        <small class="text-muted">
+                                            <i class="pi pi-calendar"></i> Created: 
+                                            <h:outputText value="#{todo.createdDate}">
+                                                <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
+                                            </h:outputText>
+                                            <ui:fragment rendered="#{todo.completed and todo.completedDate != null}">
+                                                | Completed: 
+                                                <h:outputText value="#{todo.completedDate}">
+                                                    <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
+                                                </h:outputText>
+                                            </ui:fragment>
+                                        </small>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p:commandButton icon="pi pi-check" 
+                                                       styleClass="btn btn-sm btn-success mr-1"
+                                                       rendered="#{not todo.completed}"
+                                                       action="#{todoBean.toggleComplete(todo.id)}"
+                                                       update=":todoList, messages"
+                                                       title="Mark as complete"/>
+                                        <p:commandButton icon="pi pi-times" 
+                                                       styleClass="btn btn-sm btn-danger mr-1"
+                                                       rendered="#{todo.completed}"
+                                                       action="#{todoBean.toggleComplete(todo.id)}"
+                                                       update=":todoList, messages"
+                                                       title="Mark as incomplete"/>
+                                        <p:commandButton icon="pi pi-pencil" 
+                                                       styleClass="btn btn-sm btn-warning mr-1"
+                                                       action="#{todoBean.selectTodo(todo)}"
+                                                       update=":editTodoDialog"
+                                                       title="Edit"/>
+                                        <p:commandButton icon="pi pi-trash" 
+                                                       styleClass="btn btn-sm btn-danger"
+                                                       action="#{todoBean.deleteTodo(todo.id)}"
+                                                       update=":todoList, messages"
+                                                       title="Delete"
+                                                       onclick="return confirm('Are you sure you want to delete this todo?');"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </ui:repeat>
+                    </ui:fragment>
+                </h:form>
+            </h:panelGroup>
+        </div>
+        
+        <!-- Session Timeout Warning Dialog -->
+        <p:dialog header="Session Timeout Warning" widgetVar="sessionTimeoutDialog" modal="true" 
+                  resizable="false" closable="false" draggable="false" style="width: 450px">
+            <div class="text-center">
+                <i class="pi pi-exclamation-triangle" style="font-size: 3rem; color: #dc3545; margin-bottom: 1rem;"></i>
+                <h4 style="color: #dc3545; margin-bottom: 1rem;">Your session is about to expire</h4>
+                <p>Your session will expire due to inactivity in <strong id="sessionCountdown">5:00</strong> minutes.</p>
+                <p class="text-muted">Click "Stay Logged In" to continue your session.</p>
+            </div>
+            <f:facet name="footer">
+                <p:commandButton value="Stay Logged In" 
+                               action="#{loginBean.keepSessionAlive}"
+                               styleClass="btn btn-primary"
+                               icon="pi pi-check"
+                               oncomplete="if(window.sessionTimeoutManager) { window.sessionTimeoutManager.updateActivity(); } PF('sessionTimeoutDialog').hide();"/>
+                <p:commandButton value="Logout Now" 
+                               action="#{loginBean.logout}"
+                               styleClass="btn btn-secondary"
+                               icon="pi pi-sign-out"
+                               ajax="false"/>
+            </f:facet>
+        </p:dialog>
+        
+        <!-- Session Keep-Alive Poll -->
+        <h:form id="pollForm" style="display: none;">
+            <p:poll interval="60" listener="#{loginBean.keepSessionAlive}" 
+                    update="@none"/>
+        </h:form>
+        
+        <!-- Hidden logout button for back button detection -->
+        <h:form id="backButtonLogoutForm" style="display: none;">
+            <p:commandButton id="backButtonLogoutBtn" 
+                           action="#{loginBean.logoutAjax}" 
+                           update="@none"
+                           style="display: none;"/>
+        </h:form>
+        
+        <!-- Edit Todo Dialog -->
+        <p:dialog header="Edit Todo" widgetVar="editTodoDialog" modal="true" resizable="false" style="width: 500px">
+            <h:form id="editTodoForm">
+                <div class="form-group">
+                    <h:outputLabel for="editTitle" value="Title" styleClass="form-label"/>
+                    <p:inputText id="editTitle" value="#{todoBean.title}" 
+                               styleClass="form-control" 
+                               required="true"
+                               requiredMessage="Title is required"/>
+                </div>
+                <div class="form-group">
+                    <h:outputLabel for="editDescription" value="Description" styleClass="form-label"/>
+                    <p:inputTextarea id="editDescription" value="#{todoBean.description}" 
+                                   styleClass="form-control" 
+                                   rows="3"/>
+                </div>
+                <div class="text-right">
+                    <p:commandButton value="Update" 
+                                   action="#{todoBean.updateTodo}" 
+                                   styleClass="btn btn-primary mr-2"
+                                   icon="pi pi-check"
+                                   update=":todoList, messages"
+                                   oncomplete="PF('editTodoDialog').hide()"/>
+                    <p:commandButton value="Cancel" 
+                                   action="#{todoBean.cancelEdit}" 
+                                   styleClass="btn btn-secondary"
+                                   icon="pi pi-times"
+                                   onclick="PF('editTodoDialog').hide(); return false;"/>
+                </div>
+            </h:form>
+        </p:dialog>
+        
+        <h:outputScript library="webjars" name="bootstrap/4.6.2/js/bootstrap.bundle.min.js"/>
+        <script type="text/javascript">
+            // Expose functions for session timeout manager
+            window.keepSessionAlive = function() {
+                // This will be called by the session timeout manager
+                // The PrimeFaces poll component handles the actual keep-alive
+            };
+            
+            window.logoutAction = function() {
+                // Trigger logout via PrimeFaces remote command
+                if (typeof PrimeFaces !== 'undefined') {
+                    PrimeFaces.ab({source: 'logoutBtn', event: 'click'});
+                }
+            };
+            
+            // Back button detection - this will be handled by session-timeout.js
+            // but we ensure it's initialized here as well
+            if (window.sessionTimeoutManager &amp;&amp; typeof window.sessionTimeoutManager.logoutOnBackButton === 'function') {
+                // Already initialized by session-timeout.js
+            } else {
+                // Fallback initialization if session-timeout.js hasn't loaded yet
+                window.addEventListener('pageshow', function(event) {
+                    if (event.persisted) {
+                        // Page loaded from cache (back button)
+                        const basePath = window.location.pathname.replace(/\/todo\/.*/, '');
+                        window.location.href = basePath + '/login.xhtml?backButton=true';
+                    }
+                });
+            }
+        </script>
+    </h:body>
+</html>
+
