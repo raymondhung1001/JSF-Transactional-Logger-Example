@@ -22,6 +22,7 @@ public class TodoService {
         logger.info("Creating new todo for user: {}", user.getUsername());
         Todo todo = new Todo(title, description, user);
         em.persist(todo);
+        em.flush(); // Flush to ensure the entity is immediately available for queries
         logger.info("Todo created successfully with id: {}", todo.getId());
         return todo;
     }

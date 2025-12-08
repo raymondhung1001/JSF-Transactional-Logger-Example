@@ -2,7 +2,6 @@ package com.example.todo.filter;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import java.io.IOException;
 
 /**
  * Response wrapper that ensures no-cache headers are always set,
