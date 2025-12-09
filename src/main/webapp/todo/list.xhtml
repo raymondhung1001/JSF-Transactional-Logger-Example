@@ -20,28 +20,16 @@
             .navbar-brand, .navbar-text {
                 color: white !important;
             }
-            .todo-card {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                margin-bottom: 1rem;
-                padding: 1.5rem;
-                transition: transform 0.2s;
-            }
-            .todo-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            }
-            .todo-completed {
-                opacity: 0.6;
-                text-decoration: line-through;
-            }
-            .add-todo-section {
+            .todo-container {
                 background: white;
                 border-radius: 8px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 padding: 2rem;
-                margin-bottom: 2rem;
+                margin-top: 2rem;
+            }
+            .todo-completed {
+                opacity: 0.6;
+                text-decoration: line-through;
             }
         </style>
     </h:head>
@@ -66,105 +54,141 @@
             </div>
         </nav>
         
-        <div class="container mt-4">
+        <div class="container">
             <p:messages id="messages" showDetail="true" closable="true"/>
             
-            <!-- Add Todo Section -->
-            <div class="add-todo-section">
-                <h3 class="mb-3">
-                    <i class="pi pi-plus-circle"></i> Add New Todo
-                </h3>
-                <h:form id="addTodoForm">
-                    <div class="form-group">
-                        <h:outputLabel for="title" value="Title" styleClass="form-label"/>
-                        <p:inputText id="title" value="#{todoBean.title}" 
-                                   styleClass="form-control" 
-                                   placeholder="Enter todo title"
-                                   required="true"
-                                   requiredMessage="Title is required"/>
-                    </div>
-                    <div class="form-group">
-                        <h:outputLabel for="description" value="Description" styleClass="form-label"/>
-                        <p:inputTextarea id="description" value="#{todoBean.description}" 
-                                       styleClass="form-control" 
-                                       placeholder="Enter todo description"
-                                       rows="3"/>
-                    </div>
-                    <p:commandButton value="Add Todo" 
-                                   action="#{todoBean.addTodo}" 
-                                   styleClass="btn btn-primary"
-                                   icon="pi pi-plus"
-                                   update="messages, :todoList, addTodoForm"/>
+            <!-- Single Form containing everything -->
+            <div class="todo-container">
+                <h:form id="mainTodoForm">
+                    
+                    <!-- Header with Add Button -->
+                    <h:panelGroup id="todoHeader">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3>
+                                <i class="pi pi-list"></i> My Todos 
+                                <span class="badge badge-primary">#{todoBean.todos != null ? todoBean.todos.size() : 0}</span>
+                            </h3>
+                            <p:commandButton value="Add New Todo" 
+                                           action="#{todoBean.prepareAddTodo}"
+                                           styleClass="btn btn-primary"
+                                           icon="pi pi-plus"
+                                           update=":mainTodoForm:todoDialog"
+                                           process="@this"
+                                           oncomplete="PF('todoDialog').show();"/>
+                        </div>
+                    </h:panelGroup>
+                    
+                    <!-- DataTable for todos -->
+                    <h:panelGroup id="todoTableWrapper">
+                        <p:dataTable id="todoTable" 
+                                   value="#{todoBean.todos}" 
+                                   var="todo"
+                                   emptyMessage="No todos yet. Click 'Add New Todo' to get started!"
+                                   styleClass="table table-hover"
+                                   rowStyleClass="#{todo.completed ? 'todo-completed' : ''}"
+                                   rows="10"
+                                   paginator="#{todoBean.todos.size() gt 10}"
+                                   paginatorPosition="bottom">
+                            
+                            <p:column headerText="Title" style="width: 20%;">
+                                <h:outputText value="#{todo.title}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Description" style="width: 30%;">
+                                <h:outputText value="#{todo.description}" rendered="#{not empty todo.description}"/>
+                                <h:outputText value="-" styleClass="text-muted" rendered="#{empty todo.description}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Created Date" style="width: 15%;">
+                                <h:outputText value="#{todo.createdDate}">
+                                    <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
+                                </h:outputText>
+                            </p:column>
+                            
+                            <p:column headerText="Completed Date" style="width: 15%;">
+                                <h:outputText value="#{todo.completedDate}" rendered="#{todo.completed and todo.completedDate != null}">
+                                    <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
+                                </h:outputText>
+                                <h:outputText value="-" styleClass="text-muted" rendered="#{not todo.completed or todo.completedDate == null}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Status" style="width: 10%;">
+                                <h:outputText value="Completed" styleClass="badge badge-success" rendered="#{todo.completed}"/>
+                                <h:outputText value="Pending" styleClass="badge badge-warning" rendered="#{not todo.completed}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Actions" style="width: 10%;">
+                                <p:commandButton icon="pi pi-pencil" 
+                                               styleClass="btn btn-sm btn-warning mr-1"
+                                               action="#{todoBean.selectTodo(todo)}"
+                                               update=":mainTodoForm:todoDialog"
+                                               process="@this"
+                                               oncomplete="PF('todoDialog').show();"
+                                               title="Edit"/>
+                                <p:commandButton icon="pi pi-trash" 
+                                               styleClass="btn btn-sm btn-danger"
+                                               action="#{todoBean.deleteTodo(todo.id)}"
+                                               update=":mainTodoForm:todoTableWrapper :mainTodoForm:todoHeader :messages"
+                                               process="@this"
+                                               title="Delete">
+                                    <p:confirm header="Confirmation" message="Are you sure you want to delete this todo?" 
+                                              icon="pi pi-exclamation-triangle"/>
+                                </p:commandButton>
+                            </p:column>
+                        </p:dataTable>
+                    </h:panelGroup>
+                    
+                    <!-- Todo Dialog for Add/Edit -->
+                    <p:dialog id="todoDialog" 
+                             header="#{todoBean.editMode ? 'Edit Todo' : 'Add New Todo'}" 
+                             widgetVar="todoDialog" 
+                             modal="true" 
+                             resizable="false" 
+                             width="500"
+                             height="auto">
+                        
+                        <h:panelGroup id="dialogContent">
+                            <div class="form-group">
+                                <h:outputLabel for="dialogTitle" value="Title" styleClass="form-label"/>
+                                <p:inputText id="dialogTitle" 
+                                           value="#{todoBean.title}" 
+                                           styleClass="form-control" 
+                                           placeholder="Enter todo title"
+                                           required="true"
+                                           requiredMessage="Title is required"/>
+                            </div>
+                            <div class="form-group">
+                                <h:outputLabel for="dialogDescription" value="Description" styleClass="form-label"/>
+                                <p:inputTextarea id="dialogDescription" 
+                                               value="#{todoBean.description}" 
+                                               styleClass="form-control" 
+                                               placeholder="Enter todo description"
+                                               rows="3"/>
+                            </div>
+                        </h:panelGroup>
+                        
+                        <f:facet name="footer">
+                            <p:commandButton value="#{todoBean.editMode ? 'Update' : 'Add'}" 
+                                           action="#{todoBean.saveTodo}" 
+                                           styleClass="btn btn-primary"
+                                           icon="#{todoBean.editMode ? 'pi pi-check' : 'pi pi-plus'}"
+                                           update=":mainTodoForm:todoTableWrapper :mainTodoForm:todoHeader :messages :mainTodoForm:dialogContent"
+                                           oncomplete="if(!args.validationFailed) { PF('todoDialog').hide(); }"/>
+                            <p:commandButton value="Cancel" 
+                                           styleClass="btn btn-secondary"
+                                           icon="pi pi-times"
+                                           onclick="PF('todoDialog').hide(); return false;"/>
+                        </f:facet>
+                    </p:dialog>
+                    
+                    <!-- Confirmation Dialog -->
+                    <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
+                        <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes btn btn-danger" icon="pi pi-check"/>
+                        <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no btn btn-secondary" icon="pi pi-times"/>
+                    </p:confirmDialog>
+                    
                 </h:form>
             </div>
-            
-            <!-- Todo List -->
-            <h:panelGroup id="todoList">
-                <h3 class="mb-3">
-                    <i class="pi pi-list"></i> My Todos (#{todoBean.todos.size()})
-                </h3>
-                
-                <h:form id="todoForm">
-                    <ui:fragment rendered="#{empty todoBean.todos}">
-                        <div class="alert alert-info">
-                            <i class="pi pi-info-circle"></i> No todos yet. Add one above to get started!
-                        </div>
-                    </ui:fragment>
-                    
-                    <ui:fragment rendered="#{not empty todoBean.todos}">
-                        <ui:repeat value="#{todoBean.todos}" var="todo">
-                            <div class="todo-card #{todo.completed ? 'todo-completed' : ''}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h5 class="mb-2">
-                                            <i class="pi pi-circle" style="color: #{todo.completed ? 'green' : 'gray'}"></i>
-                                            #{todo.title}
-                                        </h5>
-                                        <p class="text-muted mb-2">#{todo.description}</p>
-                                        <small class="text-muted">
-                                            <i class="pi pi-calendar"></i> Created: 
-                                            <h:outputText value="#{todo.createdDate}">
-                                                <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
-                                            </h:outputText>
-                                            <ui:fragment rendered="#{todo.completed and todo.completedDate != null}">
-                                                | Completed: 
-                                                <h:outputText value="#{todo.completedDate}">
-                                                    <f:convertDateTime pattern="yyyy-MM-dd HH:mm"/>
-                                                </h:outputText>
-                                            </ui:fragment>
-                                        </small>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p:commandButton icon="pi pi-check" 
-                                                       styleClass="btn btn-sm btn-success mr-1"
-                                                       rendered="#{not todo.completed}"
-                                                       action="#{todoBean.toggleComplete(todo.id)}"
-                                                       update=":todoList, messages"
-                                                       title="Mark as complete"/>
-                                        <p:commandButton icon="pi pi-times" 
-                                                       styleClass="btn btn-sm btn-danger mr-1"
-                                                       rendered="#{todo.completed}"
-                                                       action="#{todoBean.toggleComplete(todo.id)}"
-                                                       update=":todoList, messages"
-                                                       title="Mark as incomplete"/>
-                                        <p:commandButton icon="pi pi-pencil" 
-                                                       styleClass="btn btn-sm btn-warning mr-1"
-                                                       action="#{todoBean.selectTodo(todo)}"
-                                                       update=":editTodoDialog"
-                                                       title="Edit"/>
-                                        <p:commandButton icon="pi pi-trash" 
-                                                       styleClass="btn btn-sm btn-danger"
-                                                       action="#{todoBean.deleteTodo(todo.id)}"
-                                                       update=":todoList, messages"
-                                                       title="Delete"
-                                                       onclick="return confirm('Are you sure you want to delete this todo?');"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </ui:repeat>
-                    </ui:fragment>
-                </h:form>
-            </h:panelGroup>
         </div>
         
         <!-- Session Timeout Warning Dialog -->
@@ -204,40 +228,8 @@
                            style="display: none;"/>
         </h:form>
         
-        <!-- Edit Todo Dialog -->
-        <p:dialog header="Edit Todo" widgetVar="editTodoDialog" modal="true" resizable="false" style="width: 500px">
-            <h:form id="editTodoForm">
-                <div class="form-group">
-                    <h:outputLabel for="editTitle" value="Title" styleClass="form-label"/>
-                    <p:inputText id="editTitle" value="#{todoBean.title}" 
-                               styleClass="form-control" 
-                               required="true"
-                               requiredMessage="Title is required"/>
-                </div>
-                <div class="form-group">
-                    <h:outputLabel for="editDescription" value="Description" styleClass="form-label"/>
-                    <p:inputTextarea id="editDescription" value="#{todoBean.description}" 
-                                   styleClass="form-control" 
-                                   rows="3"/>
-                </div>
-                <div class="text-right">
-                    <p:commandButton value="Update" 
-                                   action="#{todoBean.updateTodo}" 
-                                   styleClass="btn btn-primary mr-2"
-                                   icon="pi pi-check"
-                                   update=":todoList, messages"
-                                   oncomplete="PF('editTodoDialog').hide()"/>
-                    <p:commandButton value="Cancel" 
-                                   action="#{todoBean.cancelEdit}" 
-                                   styleClass="btn btn-secondary"
-                                   icon="pi pi-times"
-                                   onclick="PF('editTodoDialog').hide(); return false;"/>
-                </div>
-            </h:form>
-        </p:dialog>
-        
         <h:outputScript library="webjars" name="bootstrap/4.6.2/js/bootstrap.bundle.min.js"/>
-        <script type="text/javascript">
+        <h:outputScript>
             // Expose functions for session timeout manager
             window.keepSessionAlive = function() {
                 // This will be called by the session timeout manager
@@ -265,7 +257,6 @@
                     }
                 });
             }
-        </script>
+        </h:outputScript>
     </h:body>
 </html>
-
